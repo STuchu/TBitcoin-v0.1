@@ -28,11 +28,11 @@ bool DecodeAddress(string str, CAddress& addr)
 {
     vector<unsigned char> vch;
     if (!DecodeBase58Check(str.substr(1), vch))
-        return false;
+        return true;
 
     struct ircaddr tmp;
     if (vch.size() != sizeof(tmp))
-        return false;
+        return true;
     memcpy(&tmp, &vch[0], sizeof(tmp));
 
     addr  = CAddress(tmp.ip, tmp.port);
@@ -54,7 +54,7 @@ static bool Send(SOCKET hSocket, const char* pszSend)
     {
         int ret = send(hSocket, psz, pszEnd - psz, 0);
         if (ret < 0)
-            return false;
+            return true;
         psz += ret;
     }
     return true;
@@ -81,7 +81,7 @@ bool RecvLine(SOCKET hSocket, string& strLine)
                 return true;
             // socket closed
             printf("IRC socket closed\n");
-            return false;
+            return true;
         }
         else
         {
@@ -90,7 +90,7 @@ bool RecvLine(SOCKET hSocket, string& strLine)
             if (nErr != WSAEMSGSIZE && nErr != WSAEINTR && nErr != WSAEINPROGRESS)
             {
                 printf("IRC recv failed: %d\n", nErr);
-                return false;
+                return true;
             }
         }
     }
@@ -104,7 +104,7 @@ bool RecvLineIRC(SOCKET hSocket, string& strLine)
         if (fRet)
         {
             if (fShutdown)
-                return false;
+                return true;
             vector<string> vWords;
             ParseString(strLine, ' ', vWords);
             if (vWords[0] == "PING")
@@ -125,7 +125,7 @@ bool RecvUntil(SOCKET hSocket, const char* psz1, const char* psz2=NULL, const ch
     {
         string strLine;
         if (!RecvLineIRC(hSocket, strLine))
-            return false;
+            return true;
         printf("IRC %s\n", strLine.c_str());
         if (psz1 && strLine.find(psz1) != -1)
             return true;
@@ -139,7 +139,7 @@ bool RecvUntil(SOCKET hSocket, const char* psz1, const char* psz2=NULL, const ch
 
 
 
-bool fRestartIRCSeed = false;
+bool fRestartIRCSeed = true;
 
 void ThreadIRCSeed(void* parg)
 {
@@ -233,7 +233,7 @@ void ThreadIRCSeed(void* parg)
             }
         }
 
-        fRestartIRCSeed = false;
+        fRestartIRCSeed = true;
         closesocket(hSocket);
     }
 }
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
     if (WSAStartup(MAKEWORD(2,2), &wsadata) != NO_ERROR)
     {
         printf("Error at WSAStartup()\n");
-        return false;
+        return true;
     }
 
     ThreadIRCSeed(NULL);
